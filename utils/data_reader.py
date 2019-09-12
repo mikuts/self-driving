@@ -20,7 +20,7 @@ class DataReader:
         self.first = True
 
     def concatenate(self, camera_names, time_len):
-        logs_names = [x.replace('camera', 'labels') for x in camera_names]
+        logs_names = [x.replace('camera', 'log') for x in camera_names]
 
         angle = []  # steering angle of the car
         speed = []  # steering angle of the car
