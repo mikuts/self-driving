@@ -14,7 +14,6 @@ from utils.data_reader import DataReader
 from utils.view_steering_model import render_steering_tf
 
 from utils.flags import core as flags_core
-from utils.logs import hooks_helper
 from utils.misc import distribution_utils
 
 FLAGS = flags.FLAGS
