@@ -25,7 +25,7 @@ def parse_args():
                             description='''Trains a self-steering car model in single-instance or distributed mode.
                             For distributed mode, the script will use few environment variables as defaults:
                             JOB_NAME, TASK_INDEX, PS_HOSTS, and WORKER_HOSTS. These environment variables will be
-                            available on distributed Tensorflow jobs on Clusterone platform by default.
+                            available on distributed Tensorflow jobs on Gradient by default.
                             If running this locally, you will need to set these environment variables
                             or pass them in as arguments (i.e. python main.py --job_name worker --task_index 0
                             --worker_hosts "localhost:2222,localhost:2223" --ps_hosts "localhost:2224").
@@ -301,12 +301,6 @@ if __name__ == "__main__":
     tf.logging.debug('=' * 20 + ' Environment Variables ' + '=' * 20)
     for k, v in os.environ.items():
         tf.logging.debug('{}: {}'.format(k, v))
-
-    tf.logging.debug('=' * 20 + ' Arguments ' + '=' * 20)
-    for k, v in sorted(args.__dict__.items()):
-        if v is not None:
-            tf.logging.debug('{}: {}'.format(k, v))
-    
 
     #TF_CONFIG = make_tf_config(args)
     import gradient_sdk
