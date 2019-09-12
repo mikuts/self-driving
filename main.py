@@ -149,17 +149,7 @@ def main(_):
     # Create an estimator
     model_function = get_model_fn(opts)
 
-    session_config = tf.ConfigProto(
-        inter_op_parallelism_threads=opts.inter_op_parallelism_threads,
-        intra_op_parallelism_threads=opts.intra_op_parallelism_threads,
-        allow_soft_placement=True)
-
-    distribution_strategy = distribution_utils.get_distribution_strategy(
-        flags_core.get_num_gpus(opts), opts.all_reduce_alg)
-
-
     config = tf.estimator.RunConfig(
-        train_distribute=distribution_strategy,
         session_config=session_config,
         save_summary_steps=opts.save_summary_steps,
         save_checkpoints_steps=opts.ckpt_steps,
