@@ -78,7 +78,7 @@ def parse_args():
     
     opts.train_data = os.path.join(opts.absolute_data_path, 'camera/training/*.h5')
 
-    opts.log_dir = os.getenv('PS_MODEL_PATH')
+    opts.log_dir = os.environ.get("PS_MODEL_PATH")
     opts.ps_hosts = opts.ps_hosts.split(',') if opts.ps_hosts else []
     opts.worker_hosts = opts.worker_hosts.split(',') if opts.worker_hosts else []
 
@@ -212,6 +212,7 @@ def main(opts):
         save_checkpoints_steps=opts.ckpt_steps,
         keep_checkpoint_max=opts.max_ckpts,
         log_step_count_steps=opts.log_step_count_steps)
+
     estimator = tf.estimator.Estimator(
         model_fn=model_function,
         config=config)
