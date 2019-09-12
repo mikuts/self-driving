@@ -19,79 +19,6 @@ from utils.misc import distribution_utils
 
 FLAGS = flags.FLAGS
 
-def parse_args():
-    """Parse arguments"""
-    parser = ArgumentParser(formatter_class=ArgumentDefaultsHelpFormatter,
-                            description='''Trains a self-steering car model in single-instance or distributed mode.
-                            For distributed mode, the script will use few environment variables as defaults:
-                            JOB_NAME, TASK_INDEX, PS_HOSTS, and WORKER_HOSTS. These environment variables will be
-                            available on distributed Tensorflow jobs on Gradient by default.
-                            If running this locally, you will need to set these environment variables
-                            or pass them in as arguments (i.e. python main.py --job_name worker --task_index 0
-                            --worker_hosts "localhost:2222,localhost:2223" --ps_hosts "localhost:2224").
-                            If these are not set, the script will run in non-distributed (single instance) mode.''')
-
-    # Configuration for distributed task
-    parser.add_argument('--job_name', type=str, default=os.environ.get('JOB_NAME', None), choices=['worker', 'ps'],
-                        help='Task type for the node in the distributed cluster. Worker-0 will be set as master.')
-    parser.add_argument('--task_index', type=int, default=os.environ.get('TASK_INDEX', 0),
-                        help='Worker task index, should be >= 0. task_index=0 is the chief worker.')
-    parser.add_argument('--ps_hosts', type=str, default=os.environ.get('PS_HOSTS', ''),
-                        help='Comma-separated list of hostname:port pairs.')
-    parser.add_argument('--worker_hosts', type=str, default=os.environ.get('WORKER_HOSTS', ''),
-                        help='Comma-separated list of hostname:port pairs.')
-
-    # Experiment related parameters
-    parser.add_argument('--absolute_data_path', type=str, default='/datasets/self-driving-demo-data/',
-                        help='Using this will ignore other data path arguments.')
-
-    # Model params
-    parser.add_argument('--dropout_rate1', type=float, default=0.2,
-                        help='Dropout rate after the convolutional layers.')
-    parser.add_argument('--dropout_rate2', type=float, default=0.5,
-                        help='Dropout rate after the dense layer.')
-    parser.add_argument('--fc_dim', type=int, default=512,
-                        help='Number of dimensions in the dense layer.')
-    parser.add_argument('--nogood', action='store_true',
-                        help='Ignore "goods" filters')
-    parser.add_argument('--learning_rate', type=float, default=0.0001,
-                        help='Initial learning rate used in Adam optimizer.')
-    parser.add_argument('--learning_decay', type=float, default=0.0001,
-                        help='Exponential decay rate of the learning rate per step.')
-
-    # Training params
-    parser.add_argument('--batch_size', type=int, default=64,
-                        help='Batch size to use during training and evaluation.')
-    parser.add_argument('--max_steps', type=int, default=10000,
-                        help='Max number of steps to train for.')
-    parser.add_argument('--verbosity', type=str, default='INFO', choices=['CRITICAL', 'ERROR', 'WARN', 'INFO', 'DEBUG'],
-                        help='TF logging level. To log intermediate results, set this to INFO or DEBUG.')
-    parser.add_argument('--num_threads', type=int, default=1,
-                        help='Number of threads to use to prepare data')
-    parser.add_argument('--max_ckpts', type=int, default=2,
-                        help='Maximum number of checkpoints to keep')
-    parser.add_argument('--ckpt_steps', type=int, default=100,
-                        help='How frequently to save a model checkpoint')
-    parser.add_argument('--save_summary_steps', type=int, default=10,
-                        help='How frequently to save TensorBoard summaries')
-    parser.add_argument('--log_step_count_steps', type=int, default=10,
-                        help='How frequently to log loss & global steps/s')
-    parser.add_argument('--eval_secs', type=int, default=60,
-                        help='How frequently to run evaluation step. ' +
-                             'By default, there is no evaluation dataset, thus effectively no evaluation.')
-
-    # Parse args
-    opts = parser.parse_args()
-
-    
-    opts.train_data = os.path.join(opts.absolute_data_path, 'camera/training/*.h5')
-
-    opts.model_dir = os.path.abspath(os.environ.get('PS_MODEL_PATH', os.getcwd() + '/models') + '/self-driving')
-    opts.ps_hosts = opts.ps_hosts.split(',') if opts.ps_hosts else []
-    opts.worker_hosts = opts.worker_hosts.split(',') if opts.worker_hosts else []
-
-    return opts
-
 def define_self_driving_flags():
 
     flags.DEFINE_integer('eval_secs', os.environ.get('EVAL_SECS', 60), 'How frequently to run evaluation step')
@@ -130,7 +57,7 @@ def define_self_driving_flags():
                             batch_size=int(os.environ.get('BATCH_SIZE', 64)),
                             )
                             
-def make_tf_config(opts):
+def make_tf_config():
     """Returns TF_CONFIG that can be used to set the environment variable necessary for distributed training"""
     # Distributed TF Estimator codes require TF_CONFIG environment variable
     try:
@@ -141,8 +68,8 @@ def make_tf_config(opts):
         task_index = int(os.environ['TASK_INDEX'])
         ps_hosts = os.environ['PS_HOSTS']
         worker_hosts = os.environ['WORKER_HOSTS']
-    except KeyError as e:
-        # This will be used for single instance jobs.
+    except:
+        # Txhis will be used for single instance jobs.
         # If running distributed job locally manually, you need to pass in these values as arguments.
         job_name = None
         task_index = 0
@@ -254,7 +181,7 @@ def main(_):
                                         max_steps=opts.max_steps)
     eval_spec = tf.estimator.EvalSpec(input_fn=eval_input_fn,
                                       steps=1,
-                                      start_delay_secs=10,
+                                      start_delay_secs=0,
                                       throttle_secs=opts.eval_secs)
 
     # Train and evaluate!
@@ -276,7 +203,6 @@ def main(_):
         tf.logging.debug('Model Exported')
 
 if __name__ == "__main__":
-    args = parse_args()
     tf.logging.set_verbosity(tf.logging.INFO)
     define_self_driving_flags()
 
@@ -286,7 +212,7 @@ if __name__ == "__main__":
 
     #TF_CONFIG = make_tf_config(args)
     
-    TF_CONFIG = make_tf_config(args)
+    TF_CONFIG = make_tf_config()
     print('='*30, 'TF_CONFIG', '='*30)
     print(TF_CONFIG)
     os.environ['TF_CONFIG'] = json.dumps(TF_CONFIG)
