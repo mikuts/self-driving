@@ -75,7 +75,7 @@ def make_tf_config():
         task_index = 0
         ps_hosts = ''
         worker_hosts = ''
-    if opts.job_name is None:
+    if job_name is None:
         return {}
     # Nodes may need to refer to itself as localhost
     tf_config = os.environ.get('TF_CONFIG')
