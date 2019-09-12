@@ -34,7 +34,7 @@ def parse_args():
                         help='Comma-separated list of hostname:port pairs.')
 
     # Experiment related parameters
-    parser.add_argument('--absolute_data_path', type=str, default='/datasets/self-driving-demo-data',
+    parser.add_argument('--absolute_data_path', type=str, default='/datasets/self-driving-demo-data/',
                         help='Using this will ignore other data path arguments.')
 
     # Model params
@@ -203,11 +203,11 @@ def main(opts):
     distribution_strategy = get_distribution_strategy(
         (1 if tf.test.is_gpu_available() else 0), None) #all_reduce_alg
 
+    print(opts.model_dir)
 
     config = tf.estimator.RunConfig(
         train_distribute=distribution_strategy,
         session_config=session_config,
-        model_dir=opts.model_dir,
         save_summary_steps=opts.save_summary_steps,
         save_checkpoints_steps=opts.ckpt_steps,
         keep_checkpoint_max=opts.max_ckpts,
@@ -215,6 +215,7 @@ def main(opts):
 
     estimator = tf.estimator.Estimator(
         model_fn=model_function,
+        model_dir=opts.model_dir,
         config=config)
 
     # Create input fn
@@ -261,10 +262,12 @@ if __name__ == "__main__":
             tf.logging.debug('{}: {}'.format(k, v))
     
 
-    TF_CONFIG = make_tf_config(args)
+    #TF_CONFIG = make_tf_config(args)
+    import gradient_sdk
+    gradient_sdk.get_tf_config()
     tf.logging.debug('=' * 20 + ' TF_CONFIG ' + '=' * 20)
-    tf.logging.debug(TF_CONFIG)
-    os.environ['TF_CONFIG'] = json.dumps(TF_CONFIG)
+    tf.logging.debug(os.environ.get('TF_CONFIG'))
+    #os.environ['TF_CONFIG'] = json.dumps(TF_CONFIG)
 
     tf.logging.info('=' * 20 + ' Train starting ' + '=' * 20)
     main(args)
