@@ -235,7 +235,7 @@ def get_model_fn(opts):
     return model_fn
 
 
-def main():
+def main(_):
     """Main"""
     opts = flags.FLAGS
     # Create an estimator
@@ -294,7 +294,7 @@ def main():
         tf.logging.debug('Model Exported')
 
 if __name__ == "__main__":
-    #args = parse_args()
+    args = parse_args()
     tf.logging.set_verbosity(tf.logging.DEBUG)
     define_self_driving_flags()
 
