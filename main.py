@@ -6,10 +6,18 @@ from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 
 import tensorflow as tf
 
+from absl import app as absl_app
+from absl import flags
+
 from models.model import get_model, get_loss
 from utils.data_reader import DataReader
 from utils.view_steering_model import render_steering_tf
-from utils.distribution_utils import *
+
+from utils.flags import core as flags_core
+from utils.logs import hooks_helper
+from utils.misc import distribution_utils
+
+FLAGS = flags.FLAGS
 
 def parse_args():
     """Parse arguments"""
@@ -84,7 +92,44 @@ def parse_args():
 
     return opts
 
+def define_self_driving_flags():
 
+    flags.DEFINE_integer('eval_secs', os.environ.get('EVAL_SECS', 600), 'How frequently to run evaluation step')
+    flags.DEFINE_integer('ckpt_steps', os.environ.get('CKPT_STEPS', 600), 'How frequently to save a model checkpoin')
+    flags.DEFINE_integer('max_ckpts', 5, 'Maximum number of checkpoints to keep')
+    flags.DEFINE_integer('max_steps', os.environ.get('MAX_STEPS', 150000), 'Max steps')
+    flags.DEFINE_integer('save_summary_steps', 100, 'How frequently to save TensorBoard summaries')
+    flags.DEFINE_integer('log_step_count_steps', 100, 'How frequently to log loss & global steps/s')
+
+    flags.DEFINE_integer('num_threads', 1, 'Number of threads to use to prepare data')
+    # Model params
+    flags.DEFINE_float('dropout_rate1', 0.2,
+                        'Dropout rate after the convolutional layers.')
+    flags.DEFINE_float('dropout_rate2', 0.5,
+                        'Dropout rate after the dense layer.')
+    flags.DEFINE_integer('fc_dim', 512,
+                        'Number of dimensions in the dense layer.')
+    
+    flags.DEFINE_float('learning_rate', 0.0001,
+                        'Initial learning rate used in Adam optimizer.')
+    flags.DEFINE_float('learning_decay', 0.0001,
+                        'Exponential decay rate of the learning rate per step.')
+
+    flags_core.define_base()
+    flags_core.define_performance(num_parallel_calls=False)
+    flags_core.define_image()
+    data_dir = '/datasets/self-driving-demo-data/camera/training/*.h5'
+    model_dir = os.path.abspath(os.environ.get('PS_MODEL_PATH', os.getcwd() + '/models') + '/self-driving')
+    export_dir = os.path.abspath(os.environ.get('PS_MODEL_PATH', os.getcwd() + '/models'))
+    flags.adopt_module_key_flags(flags_core)
+    flags_core.set_defaults(data_dir=data_dir,
+                            model_dir=model_dir,
+                            export_dir=export_dir,
+                            train_epochs=int(os.environ.get('TRAIN_EPOCHS', 40)),
+                            epochs_between_evals=int(os.environ.get('EPOCHS_EVAL', 100)),
+                            batch_size=int(os.environ.get('BATCH_SIZE', 100)),
+                            )
+                            
 def make_tf_config(opts):
     """Returns TF_CONFIG that can be used to set the environment variable necessary for distributed training"""
     try:
@@ -190,20 +235,20 @@ def get_model_fn(opts):
     return model_fn
 
 
-def main(opts):
+def main():
     """Main"""
+    opts = flags.FLAGS
     # Create an estimator
     model_function = get_model_fn(opts)
 
     session_config = tf.ConfigProto(
-        inter_op_parallelism_threads=0,
-        intra_op_parallelism_threads=0,
+        inter_op_parallelism_threads=opts.inter_op_parallelism_threads,
+        intra_op_parallelism_threads=opts.intra_op_parallelism_threads,
         allow_soft_placement=True)
 
-    distribution_strategy = get_distribution_strategy(
-        (1 if tf.test.is_gpu_available() else 0), None) #all_reduce_alg
+    distribution_strategy = distribution_utils.get_distribution_strategy(
+        flags_core.get_num_gpus(opts), opts.all_reduce_alg)
 
-    print(opts.model_dir)
 
     config = tf.estimator.RunConfig(
         train_distribute=distribution_strategy,
@@ -250,7 +295,8 @@ def main(opts):
 
 if __name__ == "__main__":
     args = parse_args()
-    tf.logging.set_verbosity(args.verbosity)
+    tf.logging.set_verbosity(tf.logging.DEBUG)
+    define_self_driving_flags()
 
     tf.logging.debug('=' * 20 + ' Environment Variables ' + '=' * 20)
     for k, v in os.environ.items():
@@ -270,4 +316,4 @@ if __name__ == "__main__":
     #os.environ['TF_CONFIG'] = json.dumps(TF_CONFIG)
 
     tf.logging.info('=' * 20 + ' Train starting ' + '=' * 20)
-    main(args)
+    absl_app.run(main)
