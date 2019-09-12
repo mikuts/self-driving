@@ -150,7 +150,7 @@ def main(_):
     model_function = get_model_fn(opts)
 
     config = tf.estimator.RunConfig(
-        session_config=session_config,
+        model_dir=opts.model_dir,
         save_summary_steps=opts.save_summary_steps,
         save_checkpoints_steps=opts.ckpt_steps,
         keep_checkpoint_max=opts.max_ckpts,
@@ -158,7 +158,6 @@ def main(_):
 
     estimator = tf.estimator.Estimator(
         model_fn=model_function,
-        model_dir=opts.model_dir,
         config=config)
 
     # Create input fn
