@@ -265,8 +265,8 @@ def main(_):
 
     # Create input fn
     # We do not provide evaluation data, so we'll just use training data for both train & evaluation.
-    train_input_fn = get_input_fn(opts.train_data, opts, is_train=True)
-    eval_input_fn = get_input_fn(opts.train_data, opts, is_train=False)
+    train_input_fn = get_input_fn(opts.data_dir, opts, is_train=True)
+    eval_input_fn = get_input_fn(opts.data_dir, opts, is_train=False)
 
     train_spec = tf.estimator.TrainSpec(input_fn=train_input_fn,
                                         max_steps=opts.max_steps)
