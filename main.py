@@ -1,6 +1,4 @@
 # MIT License, see LICENSE
-# Copyright (c) 2018 Clusterone Inc.
-# Author: Adrian Yi, adrian@clusterone.com
 
 import json
 import os
