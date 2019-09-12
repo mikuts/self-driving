@@ -211,10 +211,14 @@ if __name__ == "__main__":
         tf.logging.debug('{}: {}'.format(k, v))
 
     #TF_CONFIG = make_tf_config(args)
-    
-    TF_CONFIG = make_tf_config()
+    import gradient_sdk
+    try:
+        gradient_sdk.get_tf_config()
+    except:
+        print("single node mode")
+    #TF_CONFIG = make_tf_config()
     print('='*30, 'TF_CONFIG', '='*30)
-    print(TF_CONFIG)
-    os.environ['TF_CONFIG'] = json.dumps(TF_CONFIG)
+    print(os.environ['TF_CONFIG'])
+    #os.environ['TF_CONFIG'] = json.dumps(TF_CONFIG)
     tf.logging.info('=' * 20 + ' Train starting ' + '=' * 20)
     absl_app.run(main)
