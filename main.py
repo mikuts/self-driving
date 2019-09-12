@@ -118,7 +118,7 @@ def define_self_driving_flags():
     flags_core.define_base()
     flags_core.define_performance(num_parallel_calls=False)
     flags_core.define_image()
-    data_dir = '/datasets/self-driving-demo-data/camera/*.h5' 
+    data_dir = '/datasets/self-driving-demo-data/camera/*.h5'
     model_dir = os.path.abspath(os.environ.get('PS_MODEL_PATH', os.getcwd() + '/models') + '/self-driving')
     export_dir = os.path.abspath(os.environ.get('PS_MODEL_PATH', os.getcwd() + '/models'))
     flags.adopt_module_key_flags(flags_core)
@@ -190,19 +190,20 @@ def read_row(filenames):
 def get_input_fn(files, opts, is_train=True):
     """Returns input_fn.  is_train=True shuffles and repeats data indefinitely"""
     def input_fn():
-        x, y, s = read_row(files)
-        if is_train:
-            X, Y, S = tf.train.shuffle_batch([x, y, s],
-                                                batch_size=opts.batch_size,
-                                                capacity=5 * opts.batch_size,
-                                                min_after_dequeue=2 * opts.batch_size,
-                                                num_threads=opts.num_threads)
-        else:
-            X, Y, S = tf.train.batch([x, y, s],
-                                        batch_size=opts.batch_size,
-                                        capacity=5 * opts.batch_size,
-                                        num_threads=opts.num_threads)
-        return {'features': X, 's': S}, Y
+        with tf.device('/cpu:0'):
+            x, y, s = read_row(files)
+            if is_train:
+                X, Y, S = tf.train.shuffle_batch([x, y, s],
+                                                 batch_size=opts.batch_size,
+                                                 capacity=5 * opts.batch_size,
+                                                 min_after_dequeue=2 * opts.batch_size,
+                                                 num_threads=opts.num_threads)
+            else:
+                X, Y, S = tf.train.batch([x, y, s],
+                                         batch_size=opts.batch_size,
+                                         capacity=5 * opts.batch_size,
+                                         num_threads=opts.num_threads)
+            return {'features': X, 's': S}, Y
     return input_fn
 
 
