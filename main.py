@@ -135,6 +135,8 @@ def make_tf_config(opts):
     # Distributed TF Estimator codes require TF_CONFIG environment variable
     try:
     # These environment variables will be available on all distributed TensorFlow jobs
+        import gradient_sdk
+        gradient_sdk.get_tf_config()
         job_name = os.environ['JOB_NAME']
         task_index = int(os.environ['TASK_INDEX'])
         ps_hosts = os.environ['PS_HOSTS']
@@ -283,8 +285,7 @@ if __name__ == "__main__":
         tf.logging.debug('{}: {}'.format(k, v))
 
     #TF_CONFIG = make_tf_config(args)
-    import gradient_sdk
-    gradient_sdk.get_tf_config()
+    
     TF_CONFIG = make_tf_config(args)
     print('='*30, 'TF_CONFIG', '='*30)
     print(TF_CONFIG)
