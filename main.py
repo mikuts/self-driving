@@ -132,50 +132,30 @@ def define_self_driving_flags():
                             
 def make_tf_config(opts):
     """Returns TF_CONFIG that can be used to set the environment variable necessary for distributed training"""
+    # Distributed TF Estimator codes require TF_CONFIG environment variable
     try:
-        import gradient_sdk
-        gradient_sdk.get_tf_config()
-
-        job_name = os.environ['TYPE']
-        if job_name == 'master':
-            job_name = 'worker'
-        task_index = int(os.environ['INDEX'])
-        ps_hosts = gradient_sdk.ps_hosts().split(',')
-        worker_hosts = gradient_sdk.worker_hosts().split(',')
-        if job_name == 'ps':
-            ps_hosts[task_index] = 'localhost:%s'%(ps_hosts[task_index].split(':')[-1])
-        elif job_name == 'worker':
-            worker_hosts[task_index] = 'localhost:%s'%(worker_hosts[task_index].split(':')[-1])
-        return os.getenv('TF_CONFIG')
-
-    except:
+    # These environment variables will be available on all distributed TensorFlow jobs
+        job_name = os.environ['JOB_NAME']
+        task_index = int(os.environ['TASK_INDEX'])
+        ps_hosts = os.environ['PS_HOSTS']
+        worker_hosts = os.environ['WORKER_HOSTS']
+    except KeyError as e:
+        # This will be used for single instance jobs.
+        # If running distributed job locally manually, you need to pass in these values as arguments.
         job_name = None
         task_index = 0
-        ps_hosts = None
-        worker_hosts = None
+        ps_hosts = ''
+        worker_hosts = ''
+    if opts.job_name is None:
         return {}
-
-    # tf_config = {
-    #     'task': {
-    #         'type': opts.job_name,
-    #         'index': opts.task_index
-    #     },
-    #     'cluster': {
-    #         'master': [opts.worker_hosts[0]],
-    #         'worker': opts.worker_hosts,
-    #         'ps': opts.ps_hosts
-    #     },
-    #     'environment': 'cloud'
-    # }
-
-    # # Nodes may need to refer to itself as localhost
-    # local_ip = 'localhost:' + tf_config['cluster'][opts.job_name][opts.task_index].split(':')[1]
-    # tf_config['cluster'][opts.job_name][opts.task_index] = local_ip
-    # if opts.job_name == 'worker' and opts.task_index == 0:
-    #     tf_config['task']['type'] = 'master'
-    #     tf_config['cluster']['master'][0] = local_ip
-    # return tf_config
-
+    # Nodes may need to refer to itself as localhost
+    tf_config = os.environ.get('TF_CONFIG')
+    local_ip = 'localhost:' + tf_config['cluster'][job_name][task_index].split(':')[1]
+    tf_config['cluster'][job_name][task_index] = local_ip
+    if job_name == 'worker' and task_index == 0:
+        tf_config['task']['type'] = 'master'
+        tf_config['cluster']['master'][0] = local_ip
+    return tf_config
 
 def read_row(filenames):
     """Read a row of data from list of H5 files"""
@@ -272,7 +252,7 @@ def main(_):
                                         max_steps=opts.max_steps)
     eval_spec = tf.estimator.EvalSpec(input_fn=eval_input_fn,
                                       steps=1,
-                                      start_delay_secs=0,
+                                      start_delay_secs=10,
                                       throttle_secs=opts.eval_secs)
 
     # Train and evaluate!
@@ -295,7 +275,7 @@ def main(_):
 
 if __name__ == "__main__":
     args = parse_args()
-    tf.logging.set_verbosity(tf.logging.DEBUG)
+    tf.logging.set_verbosity(tf.logging.INFO)
     define_self_driving_flags()
 
     tf.logging.debug('=' * 20 + ' Environment Variables ' + '=' * 20)
@@ -305,9 +285,9 @@ if __name__ == "__main__":
     #TF_CONFIG = make_tf_config(args)
     import gradient_sdk
     gradient_sdk.get_tf_config()
-    tf.logging.debug('=' * 20 + ' TF_CONFIG ' + '=' * 20)
-    tf.logging.debug(os.environ.get('TF_CONFIG'))
-    #os.environ['TF_CONFIG'] = json.dumps(TF_CONFIG)
-
+    TF_CONFIG = make_tf_config(args)
+    print('='*30, 'TF_CONFIG', '='*30)
+    print(TF_CONFIG)
+    os.environ['TF_CONFIG'] = json.dumps(TF_CONFIG)
     tf.logging.info('=' * 20 + ' Train starting ' + '=' * 20)
     absl_app.run(main)
