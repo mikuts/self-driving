@@ -147,6 +147,8 @@ def main(_):
     """Main"""
     opts = flags.FLAGS
     # Create an estimator
+    os.environ['HDF5_USE_FILE_LOCKING'] = "FALSE"
+
     model_function = get_model_fn(opts)
 
     config = tf.estimator.RunConfig(
