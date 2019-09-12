@@ -78,7 +78,7 @@ def parse_args():
     
     opts.train_data = os.path.join(opts.absolute_data_path, 'camera/training/*.h5')
 
-    opts.log_dir = os.environ.get("PS_MODEL_PATH")
+    opts.model_dir = os.path.abspath(os.environ.get('PS_MODEL_PATH', os.getcwd() + '/models') + '/self-driving')
     opts.ps_hosts = opts.ps_hosts.split(',') if opts.ps_hosts else []
     opts.worker_hosts = opts.worker_hosts.split(',') if opts.worker_hosts else []
 
@@ -207,7 +207,7 @@ def main(opts):
     config = tf.estimator.RunConfig(
         train_distribute=distribution_strategy,
         session_config=session_config,
-        model_dir=opts.log_dir,
+        model_dir=opts.model_dir,
         save_summary_steps=opts.save_summary_steps,
         save_checkpoints_steps=opts.ckpt_steps,
         keep_checkpoint_max=opts.max_ckpts,
@@ -237,13 +237,13 @@ def main(opts):
         tf.logging.debug('No model was exported')
         return
 
-    if opts.log_dir:
-        tf.logging.debug('Starting to Export model to {}'.format(str(opts.log_dir)))
+    if opts.model_dir:
+        tf.logging.debug('Starting to Export model to {}'.format(str(opts.model_dir)))
         image = tf.placeholder(tf.float32, [None, 28, 28])
         input_fn = tf.estimator.export.build_raw_serving_input_receiver_fn({
             'image': image,
         })
-        estimator.export_savedmodel(opts.log_dir, input_fn,
+        estimator.export_savedmodel(opts.model_dir, input_fn,
                                            strip_default_attrs=True)
         tf.logging.debug('Model Exported')
 
