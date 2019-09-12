@@ -94,12 +94,12 @@ def parse_args():
 
 def define_self_driving_flags():
 
-    flags.DEFINE_integer('eval_secs', os.environ.get('EVAL_SECS', 600), 'How frequently to run evaluation step')
-    flags.DEFINE_integer('ckpt_steps', os.environ.get('CKPT_STEPS', 600), 'How frequently to save a model checkpoin')
-    flags.DEFINE_integer('max_ckpts', 5, 'Maximum number of checkpoints to keep')
-    flags.DEFINE_integer('max_steps', os.environ.get('MAX_STEPS', 150000), 'Max steps')
-    flags.DEFINE_integer('save_summary_steps', 100, 'How frequently to save TensorBoard summaries')
-    flags.DEFINE_integer('log_step_count_steps', 100, 'How frequently to log loss & global steps/s')
+    flags.DEFINE_integer('eval_secs', os.environ.get('EVAL_SECS', 60), 'How frequently to run evaluation step')
+    flags.DEFINE_integer('ckpt_steps', os.environ.get('CKPT_STEPS', 100), 'How frequently to save a model checkpoin')
+    flags.DEFINE_integer('max_ckpts', 2, 'Maximum number of checkpoints to keep')
+    flags.DEFINE_integer('max_steps', os.environ.get('MAX_STEPS', 10000), 'Max steps')
+    flags.DEFINE_integer('save_summary_steps', 10, 'How frequently to save TensorBoard summaries')
+    flags.DEFINE_integer('log_step_count_steps', 10, 'How frequently to log loss & global steps/s')
 
     flags.DEFINE_integer('num_threads', 1, 'Number of threads to use to prepare data')
     # Model params
@@ -127,7 +127,7 @@ def define_self_driving_flags():
                             export_dir=export_dir,
                             train_epochs=int(os.environ.get('TRAIN_EPOCHS', 40)),
                             epochs_between_evals=int(os.environ.get('EPOCHS_EVAL', 100)),
-                            batch_size=int(os.environ.get('BATCH_SIZE', 100)),
+                            batch_size=int(os.environ.get('BATCH_SIZE', 64)),
                             )
                             
 def make_tf_config(opts):
@@ -294,7 +294,7 @@ def main():
         tf.logging.debug('Model Exported')
 
 if __name__ == "__main__":
-    args = parse_args()
+    #args = parse_args()
     tf.logging.set_verbosity(tf.logging.DEBUG)
     define_self_driving_flags()
 
