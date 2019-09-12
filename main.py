@@ -144,7 +144,7 @@ def get_model_fn(opts):
     return model_fn
 
 
-def main(_):
+def main():
     """Main"""
     opts = flags.FLAGS
     # Create an estimator
