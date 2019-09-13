@@ -161,7 +161,6 @@ def main(_):
     warm_start_dir = os.environ.get("warm_start")
     estimator = tf.estimator.Estimator(
         model_fn=model_function,
-        warm_start_from=warm_start_dir,
         config=config)
 
     # Create input fn
