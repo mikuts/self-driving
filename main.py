@@ -23,7 +23,7 @@ def define_self_driving_flags():
     flags.DEFINE_integer('eval_secs', os.environ.get('EVAL_SECS', 60), 'How frequently to run evaluation step')
     flags.DEFINE_integer('ckpt_steps', os.environ.get('CKPT_STEPS', 100), 'How frequently to save a model checkpoin')
     flags.DEFINE_integer('max_ckpts', 2, 'Maximum number of checkpoints to keep')
-    flags.DEFINE_integer('max_steps', os.environ.get('MAX_STEPS', 10000), 'Max steps')
+    flags.DEFINE_integer('max_steps', os.environ.get('MAX_STEPS', 1000), 'Max steps')
     flags.DEFINE_integer('save_summary_steps', 10, 'How frequently to save TensorBoard summaries')
     flags.DEFINE_integer('log_step_count_steps', 10, 'How frequently to log loss & global steps/s')
 
