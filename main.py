@@ -158,8 +158,10 @@ def main(_):
         keep_checkpoint_max=opts.max_ckpts,
         log_step_count_steps=opts.log_step_count_steps)
 
+    warm_start_dir = os.environ.get("warm_start")
     estimator = tf.estimator.Estimator(
         model_fn=model_function,
+        warm_start_from=warm_start_dir,
         config=config)
 
     # Create input fn
